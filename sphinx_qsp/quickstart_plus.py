@@ -20,13 +20,14 @@ import sphinx
 package_template_dir = os.path.join(package_dir, 'templates', 'quickstart')
 JSON_NAME = "setting.json"
 
-TEMPORARY_VALUE = {
+EXCLUDE_VALUE = {
     'project': 'qsp',
     'author': 'qsp',
     'path': '.',
     'version': '1.0',
     'release': "1.0",
 }
+
 
 """ Font Awesome Extension
  Font Awesome: http://fontawesome.io/
@@ -42,7 +43,7 @@ extensions.append('sphinx_fontawesome')
 
 sphinx_commonmark_extension = {
     "conf_py": """
-source_suffix.append('.md')
+source_suffix = [source_suffix, '.md']
 
 from recommonmark.parser import CommonMarkParser
 source_parsers = {
@@ -92,6 +93,15 @@ exclude_patterns.append('**.ipynb_checkpoints')
     "package": ["nbsphinx"],
 }
 
+qsp_extensions = [
+    sphinx_fontawesome_extension,
+    sphinx_commonmark_extension,
+    sphinx_commonmark_autostructify_extension,
+    sphinx_sphinx_rtd_theme_extension,
+    sphinx_autobuild_extension,
+    nbsphinx_extension,
+]
+
 
 def main(argv=sys.argv):
     desc = 'Sphinx quick start plus.'
@@ -139,9 +149,35 @@ def create_template():
 
 
 def quick_start():
-    json_path = os.path.join("test_output", JSON_NAME)
-    json_obj = json.load(open(json_path))
-    d = json_obj.get("quick_start_value", {})
+    home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
+    if not os.path.isdir(home_dir):
+        os.mkdir(home_dir)
+
+    json_path = os.path.join(home_dir, JSON_NAME)
+    if os.path.isfile(json_path):
+        d = json.load(open(json_path))
+    else:
+        d = {}
 
     ask_user(d)
+
+    save_d = d.copy()
+    for key in EXCLUDE_VALUE.keys():
+        try:
+            del save_d[key]
+        except KeyError:
+            pass
+
+    json.dump(save_d, open(json_path, "w"), indent=4)
+
     generate(d, templatedir="test_output")
+
+    conf_path = os.path.join(d["path"], "conf.py")
+    make_path = os.path.join(d["path"], "Makefile")
+
+    with open(conf_path, "a+") as fc, open(make_path, "a+") as fm:
+        for ext in qsp_extensions:
+            if "conf_py" in ext:
+                fc.write(ext["conf_py"])
+            if "makefile" in ext:
+                fm.write(ext["makefile"])
