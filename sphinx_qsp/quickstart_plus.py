@@ -21,18 +21,15 @@
     :author: pashango2.
     :license: Free.
 """
-from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import print_function
 
-import sys
-import os
 import copy
 import json
-from sphinx.quickstart import do_prompt, nonempty, boolean, is_path, package_dir, term_decode
-from sphinx.util.console import purple, bold, red, turquoise, \
-    nocolor, color_terminal
+import os
+
 from sphinx import quickstart
-import sphinx
+from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
 
 LATEST_SETTING_JSON_NAME = "setting.json"
 
@@ -89,14 +86,28 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
     "package": ["sphinx_rtd_theme"],
 }
 
+
+AUTOBUILD_IGNORE = [
+    '-r "___jb_.*?___$$"',   # for pycharm
+    '-r ".*?\.(bak|BAK)$$"',
+]
+
 sphinx_autobuild_extension = {
     "key": "ext_autobuild",
     "description": "autobuild: use auto build",
 
     "makefile": """
+
 livehtml:
-\tsphinx-autobuild -b html -r .*\.md.+ $(ALLSPHINXOPTS) $(BUILDDIR)/html
-""",
+\tsphinx-autobuild -b html {0} $(ALLSPHINXOPTS) $(BUILDDIR)/html
+""".format(" ".join(AUTOBUILD_IGNORE)),
+
+    "new_makefile": """
+
+livehtml:
+\tsphinx-autobuild -b html {0} $(SOURCEDIR) $(BUILDDIR)/html
+""".format(" ".join(AUTOBUILD_IGNORE)),
+
     "package": ["sphinx-autobuild"],
 }
 
@@ -131,7 +142,10 @@ nwdiag_html_image_format = 'SVG'
 rackiag_html_image_format = 'SVG'
 packetdiag_html_image_format = 'SVG'
 """,
-    "package": ["sphinxcontrib-actdiag", "sphinxcontrib-blockdiag", "sphinxcontrib-nwdiag", "sphinxcontrib-seqdiag"],
+    "package": [
+        "sphinxcontrib-actdiag", "sphinxcontrib-blockdiag",
+        "sphinxcontrib-nwdiag", "sphinxcontrib-seqdiag"
+    ],
 }
 
 qsp_extensions = [
@@ -145,10 +159,6 @@ qsp_extensions = [
 
 EXCLUDE_VALUE = ['project', 'author', 'path', 'version', 'release', 'extensions']
 
-
-INTELLIJ_IDEA_IGNORE_RE = "___jb_(.*?)___$"
-
-
 AUTO_BUILD_BATCH = """
 @ECHO OFF
 
@@ -159,13 +169,12 @@ REM Command file for Sphinx auto build
 set SOURCEDIR={source_dir}
 set BUILDDIR={build_dir}
 
-sphinx-autobuild -b html -r {INTELLIJ_IDEA_IGNORE_RE} %SOURCEDIR% %BUILDDIR%/html
+sphinx-autobuild -b html {AUTOBUILD_IGNORE} %SOURCEDIR% %BUILDDIR%/html
 goto end
 
 :end
 popd
 """.strip()
-
 
 # for python2... can't use nonlocal
 hook_d = {}
@@ -204,6 +213,43 @@ def print_default_setting(d):
         if value:
             print(key + ":", value)
 
+
+def monkey_patch_ask_user(d):
+    # for python2... can't use nonlocal
+    global hook_d
+
+    org_do_prompt = None
+
+    if not qsp_ask_latest():
+        org_do_prompt = quickstart.do_prompt
+
+        def _do_prompt(_d, key, text, default=None, validator=nonempty):
+            default = hook_d.get(key, default)
+            if isinstance(default, bool):
+                default = 'y' if hook_d[key] else 'n'
+            org_do_prompt(_d, key, text, default, validator)
+
+        quickstart.do_prompt = _do_prompt
+    else:
+        d.update(hook_d)
+        print_default_setting(d)
+        print()
+
+    ask_user(d)
+    qsp_ask_user(d)
+
+    if org_do_prompt:
+        quickstart.do_prompt = org_do_prompt
+
+
+def monkey_patch_generate(d, templatedir=None):
+    # for python2... don't use nonlocal
+    global hook_d
+    hook_d = copy.copy(d)
+
+    generate(d, templatedir)
+
+
 def main(argv):
     global hook_d
 
@@ -219,47 +265,8 @@ def main(argv):
         # for python 2: oh..
         hook_d = {str(key): value for key, value in hook_d.items()}
 
-    # monkey patch : sphinx.quickstart.ask_user
-    original_ask_user = quickstart.ask_user
-
-    def monkey_patch_ask_user(d):
-        # for python2... can't use nonlocal
-        global hook_d
-
-        org_do_prompt = None
-
-        if not qsp_ask_latest():
-            org_do_prompt = quickstart.do_prompt
-
-            def _do_prompt(d, key, text, default=None, validator=nonempty):
-                default = hook_d.get(key, default)
-                if isinstance(default, bool):
-                    default = 'y' if hook_d[key] else 'n'
-                org_do_prompt(d, key, text, default, validator)
-
-            quickstart.do_prompt = _do_prompt
-        else:
-            d.update(hook_d)
-            print_default_setting(d)
-            print()
-
-        original_ask_user(d)
-        qsp_ask_user(d)
-
-        if org_do_prompt:
-            quickstart.do_prompt = org_do_prompt
-
+    # monkey patch
     quickstart.ask_user = monkey_patch_ask_user
-
-    # monkey patch : sphinx.quickstart.generate
-    original_generate = quickstart.generate
-
-    def monkey_patch_generate(d, templatedir=None):
-        # for python2... don't use nonlocal
-        global hook_d
-        hook_d = copy.copy(d)
-
-        original_generate(d, templatedir)
     quickstart.generate = monkey_patch_generate
 
     # do sphinx.quickstart
@@ -282,9 +289,11 @@ def main(argv):
     if d['makefile'] is True:
         make_path = os.path.join(d['path'], 'Makefile')
         with open(make_path, "a+") as fm:
+            makefile_key = "new_makefile" if d.get("make_mode", True) else "makefile"
+
             for ext in qsp_extensions:
-                if d.get(ext["key"]) in d and "makefile" in ext:
-                    fm.write(ext["makefile"])
+                if d.get(ext["key"]) and makefile_key in ext:
+                    fm.write(ext[makefile_key])
 
     if d['batchfile'] is True and d.get("ext_autobuild"):
         batchfile_path = os.path.join(d['path'], 'auto_build.bat')
@@ -294,36 +303,6 @@ def main(argv):
         open(batchfile_path, "w").write(
             AUTO_BUILD_BATCH.format(
                 build_dir=build_dir, source_dir=source_dir,
-                INTELLIJ_IDEA_IGNORE_RE=INTELLIJ_IDEA_IGNORE_RE,
+                AUTOBUILD_IGNORE=" ".join(AUTOBUILD_IGNORE),
             )
         )
-
-
-    # json_path = os.path.join(home_dir, JSON_NAME)
-    # if os.path.isfile(json_path):
-    #     d = json.load(open(json_path))
-    # else:
-    #     d = {}
-    #
-    # ask_user(d)
-    #
-    # save_d = d.copy()
-    # for key in EXCLUDE_VALUE.keys():
-    #     try:
-    #         del save_d[key]
-    #     except KeyError:
-    #         pass
-    #
-    # json.dump(save_d, open(json_path, "w"), indent=4)
-    #
-    # quickstart.generate(d, templatedir="test_output")
-    #
-    # conf_path = os.path.join(d["path"], "conf.py")
-    # make_path = os.path.join(d["path"], "Makefile")
-    #
-    # with open(conf_path, "a+") as fc, open(make_path, "a+") as fm:
-    #     for ext in qsp_extensions:
-    #         if "conf_py" in ext:
-    #             fc.write(ext["conf_py"])
-    #         if "makefile" in ext:
-    #             fm.write(ext["makefile"])
