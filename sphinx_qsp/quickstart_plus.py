@@ -51,7 +51,7 @@ extensions.append('sphinx_fontawesome')
 
 sphinx_commonmark_extension = {
     "key": "ext_commonmark",
-    "description": "use common mark",
+    "description": "use CommonMark and AutoStructify",
 
     "conf_py": """
 source_suffix = [source_suffix, '.md']
@@ -94,7 +94,7 @@ AUTOBUILD_IGNORE = [
 
 sphinx_autobuild_extension = {
     "key": "ext_autobuild",
-    "description": "autobuild: use auto build",
+    "description": "autobuild: Watch a directory and rebuild the documentation",
 
     "makefile": """
 
@@ -113,7 +113,7 @@ livehtml:
 
 nbsphinx_extension = {
     "key": "ext_nbshpinx",
-    "description": "use Jupyter Notebook",
+    "description": "Sphinx extension for embedding blockdiag diagrams",
 
     "conf_py": """
 extensions.append('nbsphinx')
@@ -124,7 +124,7 @@ exclude_patterns.append('**.ipynb_checkpoints')
 
 sphinx_blockdiag_extension = {
     "key": "ext_blockdiag",
-    "description": "use blockdiag",
+    "description": "provides a source parser for *.ipynb files",
 
     "conf_py": """
 extensions.extend([
