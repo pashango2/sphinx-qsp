@@ -21,8 +21,7 @@
     :author: pashango2.
     :license: Free.
 """
-import sys
 import sphinx_qsp
 
 if __name__ == '__main__':
-    sphinx_qsp.main(sys.argv)
+    sphinx_qsp.main()

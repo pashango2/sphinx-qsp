@@ -250,7 +250,7 @@ def monkey_patch_generate(d, templatedir=None):
     generate(d, templatedir)
 
 
-def main(argv):
+def main(argv=sys.argv):
     global hook_d
 
     # load latest setting.
