@@ -23,7 +23,7 @@
 """
 from __future__ import absolute_import
 from __future__ import print_function
-
+import sys
 import copy
 import json
 import os
@@ -306,3 +306,6 @@ def main(argv):
                 AUTOBUILD_IGNORE=" ".join(AUTOBUILD_IGNORE),
             )
         )
+
+if __name__ == '__main__':
+    main(sys.argv)

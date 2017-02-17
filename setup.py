@@ -55,7 +55,7 @@ setup(
     version=sphinx_qsp.__version__,
     url='https://github.com/pashango2/sphinx-qsp',
     # download_url='https://pypi.python.org/pypi/Sphinx',
-    license='MIT',
+    license='Free',
     author='Toshiyuki Ishii',
     author_email='pashango2@gmail.com',
     description='Python documentation generator',
@@ -67,7 +67,7 @@ setup(
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'Intended Audience :: Education',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Free License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
@@ -85,7 +85,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'sphinx-quickstart-plus = sphinx.quickstart_plus:main',
+            'sphinx-quickstart-plus = sphinx_qsp.quickstart_plus:main',
         ],
     },
     install_requires=requires,
