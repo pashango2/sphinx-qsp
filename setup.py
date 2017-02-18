@@ -49,6 +49,11 @@ extras_require = {
 if sys.platform == 'win32':
     requires.append('colorama>=0.3.5')
 
+try:
+    with open('README.txt') as f:
+        readme = f.read()
+except IOError:
+    readme = ''
 
 setup(
     name='sphinx-quickstart-plus',
@@ -59,7 +64,7 @@ setup(
     author='Toshiyuki Ishii',
     author_email='pashango2@gmail.com',
     description='Python documentation generator',
-    long_description=long_desc,
+    long_description=readme,
     zip_safe=False,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
