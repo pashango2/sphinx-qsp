@@ -13,3 +13,14 @@ pip install sphinx-quickstart-plus
 ```
 sphinx-quickstart-plus
 ```
+
+## Features
+
+- Remember latest setting
+- More extensions
+  - commonmark and recommonmark
+  - Read the Docs theme
+  - sphinx_fontawesome
+  - sphinxcontrib-blockdiag
+  - nbsphinx
+  - sphinx-autobuild
