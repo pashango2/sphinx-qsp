@@ -51,7 +51,7 @@ if sys.platform == 'win32':
 
 
 setup(
-    name='Sphinx QuickStart Plus',
+    name='sphinx-quickstart-plus',
     version=sphinx_qsp.__version__,
     url='https://github.com/pashango2/sphinx-qsp',
     # download_url='https://pypi.python.org/pypi/Sphinx',
@@ -62,12 +62,12 @@ setup(
     long_description=long_desc,
     zip_safe=False,
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 2 - Pre-Alpha',
         'Environment :: Console',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'Intended Audience :: Education',
-        'License :: OSI Approved :: Free License',
+        'License :: Freeware',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',

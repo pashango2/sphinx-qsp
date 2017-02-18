@@ -30,7 +30,12 @@ import os
 
 from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
+from sphinx.quickstart import term_input, TERM_ENCODING
 
+__version__ = "0.3"
+
+
+home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
 LATEST_SETTING_JSON_NAME = "setting.json"
 
 """ Font Awesome Extension
@@ -42,6 +47,8 @@ sphinx_fontawesome_extension = {
     "description": "use font awesome",
 
     "conf_py": """
+
+# ----- sphinx-fontawesome
 import sphinx_fontawesome
 extensions.append('sphinx_fontawesome')
 """,
@@ -54,6 +61,8 @@ sphinx_commonmark_extension = {
     "description": "use CommonMark and AutoStructify",
 
     "conf_py": """
+
+# ----- CommonMark
 source_suffix = [source_suffix, '.md']
 
 from recommonmark.parser import CommonMarkParser
@@ -79,6 +88,8 @@ sphinx_sphinx_rtd_theme_extension = {
     "description": "use Read the Doc theme",
 
     "conf_py": """
+
+# ----- Read the Docs Theme
 import sphinx_rtd_theme
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
@@ -116,6 +127,8 @@ nbsphinx_extension = {
     "description": "Sphinx extension for embedding blockdiag diagrams",
 
     "conf_py": """
+
+# ----- Jupyter Notebook nbsphinx
 extensions.append('nbsphinx')
 exclude_patterns.append('**.ipynb_checkpoints')
 """,
@@ -127,6 +140,8 @@ sphinx_blockdiag_extension = {
     "description": "provides a source parser for *.ipynb files",
 
     "conf_py": """
+
+# ----- blockdiag settings
 extensions.extend([
     'sphinxcontrib.blockdiag',
     'sphinxcontrib.seqdiag',
@@ -197,7 +212,7 @@ def qsp_ask_user(d):
         description = ext["description"]
 
         if key not in d:
-            qsp_do_prompt(d, key, description + ' (y/n)', 'n', boolean)
+            qsp_do_prompt(d, key, key + ":" + description + ' (y/n)', 'n', boolean)
 
 
 def qsp_do_prompt(d, key, text, default=None, validator=nonempty):
@@ -223,6 +238,7 @@ def monkey_patch_ask_user(d):
     if not qsp_ask_latest():
         org_do_prompt = quickstart.do_prompt
 
+        # monkey patch
         def _do_prompt(_d, key, text, default=None, validator=nonempty):
             default = hook_d.get(key, default)
             if isinstance(default, bool):
@@ -250,11 +266,23 @@ def monkey_patch_generate(d, templatedir=None):
     generate(d, templatedir)
 
 
+def set_home_dir(_in):
+    global home_dir
+    home_dir = _in
+
+
+def set_term_input(_term_input):
+    quickstart.term_input = _term_input
+
+
+def dump_setting(d, json_path):
+    json.dump(d, open(json_path, "w"), indent=4)
+
+
 def main(argv=sys.argv):
     global hook_d
 
     # load latest setting.
-    home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
     if not os.path.isdir(home_dir):
         os.mkdir(home_dir)
 
@@ -274,7 +302,7 @@ def main(argv=sys.argv):
 
     # save latest stiing.
     save_d = {key: value for key, value in hook_d.items() if key not in EXCLUDE_VALUE}
-    json.dump(save_d, open(json_path, "w"), indent=4)
+    dump_setting(save_d, json_path)
 
     # write ext-extensions
     d = hook_d
