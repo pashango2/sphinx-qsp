@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
     SphinxQuickStartPlus - sphinx-quickstart Utility
+    ------------------------------------------------
 
     sphinx:
         http://www.sphinx-doc.org/en/stable/
@@ -17,7 +18,6 @@
       - nbsphinx
       - sphinx-autobuild
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     :author: pashango2.
     :license: Free.
 """
@@ -30,7 +30,7 @@ import os
 
 from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
-from sphinx.quickstart import term_input, TERM_ENCODING
+from sphinx.quickstart import TERM_ENCODING
 
 __version__ = "0.3.3"
 
@@ -38,10 +38,7 @@ __version__ = "0.3.3"
 home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
 LATEST_SETTING_JSON_NAME = "setting.json"
 
-""" Font Awesome Extension
- Font Awesome: http://fontawesome.io/
- sphinx_fontawesome: https://github.com/fraoustin/sphinx_fontawesome
-"""
+
 sphinx_fontawesome_extension = {
     "key": "ext_fontawesome",
     "description": "use font awesome",
@@ -196,6 +193,7 @@ hook_d = {}
 
 
 def qsp_ask_latest():
+    """ ask use latest setting """
     global hook_d
 
     if hook_d:
@@ -222,7 +220,7 @@ def qsp_do_prompt(d, key, text, default=None, validator=nonempty):
     do_prompt(d, key, text, default, validator)
 
 
-def print_default_setting(d):
+def _print_default_setting(d):
     for key in sorted(d.keys()):
         value = d[key]
         if value:
@@ -230,7 +228,6 @@ def print_default_setting(d):
 
 
 def monkey_patch_ask_user(d):
-    # for python2... can't use nonlocal
     global hook_d
 
     org_do_prompt = None
@@ -248,7 +245,7 @@ def monkey_patch_ask_user(d):
         quickstart.do_prompt = _do_prompt
     else:
         d.update(hook_d)
-        print_default_setting(d)
+        _print_default_setting(d)
         print()
 
     ask_user(d)
@@ -259,7 +256,6 @@ def monkey_patch_ask_user(d):
 
 
 def monkey_patch_generate(d, templatedir=None):
-    # for python2... don't use nonlocal
     global hook_d
     hook_d = copy.copy(d)
 
@@ -276,11 +272,17 @@ def set_term_input(_term_input):
 
 
 def dump_setting(d, json_path):
+    """ for unit test
+
+    :type d: dict
+    :type json_path: str
+    """
     json.dump(d, open(json_path, "w"), indent=4)
 
 
-def main(argv=sys.argv):
+def main(argv=None):
     global hook_d
+    argv = sys.argv if argv is None else argv
 
     # load latest setting.
     if not os.path.isdir(home_dir):
