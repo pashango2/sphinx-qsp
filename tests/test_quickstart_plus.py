@@ -12,6 +12,11 @@ from sphinx_qsp import quickstart_plus as qsp
 from sphinx import quickstart as qs
 
 
+def test_check_installed_modules():
+    all_key_dict = [x["key"] for x in qsp.qsp_extensions]
+    not_install = qsp.check_installed_modules(all_key_dict)
+    assert not_install is None
+
 def test_quickstart(tmpdir):
     answers = {
         'Root path': str(tmpdir.realpath()),

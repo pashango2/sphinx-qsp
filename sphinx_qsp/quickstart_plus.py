@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
     SphinxQuickStartPlus - sphinx-quickstart Utility
+    ------------------------------------------------
 
     sphinx:
         http://www.sphinx-doc.org/en/stable/
@@ -17,7 +18,6 @@
       - nbsphinx
       - sphinx-autobuild
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     :author: pashango2.
     :license: Free.
 """
@@ -30,18 +30,15 @@ import os
 
 from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
-from sphinx.quickstart import term_input, TERM_ENCODING
+from sphinx.quickstart import TERM_ENCODING
 
-__version__ = "0.3"
+__version__ = "0.4"
 
 
 home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
 LATEST_SETTING_JSON_NAME = "setting.json"
 
-""" Font Awesome Extension
- Font Awesome: http://fontawesome.io/
- sphinx_fontawesome: https://github.com/fraoustin/sphinx_fontawesome
-"""
+
 sphinx_fontawesome_extension = {
     "key": "ext_fontawesome",
     "description": "use font awesome",
@@ -53,7 +50,7 @@ import sphinx_fontawesome
 extensions.append('sphinx_fontawesome')
 """,
 
-    "package": ["sphinx_fontawesome"]
+    "package": ["sphinx-fontawesome"]
 }
 
 sphinx_commonmark_extension = {
@@ -80,7 +77,7 @@ def setup(app):
             }, True)
     app.add_transform(AutoStructify)
 """,
-    "package": ["commonmark", "recommonmark"]
+    "package": ["CommonMark", "recommonmark"]
 }
 
 sphinx_sphinx_rtd_theme_extension = {
@@ -90,11 +87,9 @@ sphinx_sphinx_rtd_theme_extension = {
     "conf_py": """
 
 # ----- Read the Docs Theme
-import sphinx_rtd_theme
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 """,
-    "package": ["sphinx_rtd_theme"],
+    "package": ["sphinx-rtd-theme"],
 }
 
 
@@ -124,7 +119,7 @@ livehtml:
 
 nbsphinx_extension = {
     "key": "ext_nbshpinx",
-    "description": "Sphinx extension for embedding blockdiag diagrams",
+    "description": "provides a source parser for *.ipynb files",
 
     "conf_py": """
 
@@ -137,7 +132,7 @@ exclude_patterns.append('**.ipynb_checkpoints')
 
 sphinx_blockdiag_extension = {
     "key": "ext_blockdiag",
-    "description": "provides a source parser for *.ipynb files",
+    "description": "Sphinx extension for embedding blockdiag diagrams",
 
     "conf_py": """
 
@@ -164,12 +159,12 @@ packetdiag_html_image_format = 'SVG'
 }
 
 qsp_extensions = [
-    sphinx_fontawesome_extension,
     sphinx_commonmark_extension,
-    sphinx_sphinx_rtd_theme_extension,
-    sphinx_autobuild_extension,
     nbsphinx_extension,
     sphinx_blockdiag_extension,
+    sphinx_fontawesome_extension,
+    sphinx_sphinx_rtd_theme_extension,
+    sphinx_autobuild_extension,
 ]
 
 EXCLUDE_VALUE = ['project', 'author', 'path', 'version', 'release', 'extensions']
@@ -196,6 +191,7 @@ hook_d = {}
 
 
 def qsp_ask_latest():
+    """ ask use latest setting """
     global hook_d
 
     if hook_d:
@@ -207,6 +203,11 @@ def qsp_ask_latest():
 
 
 def qsp_ask_user(d):
+    """ quick start extend questions.
+
+    :param dict d: setting dict
+    :return:
+    """
     for ext in qsp_extensions:
         key = ext["key"]
         description = ext["description"]
@@ -222,7 +223,7 @@ def qsp_do_prompt(d, key, text, default=None, validator=nonempty):
     do_prompt(d, key, text, default, validator)
 
 
-def print_default_setting(d):
+def _print_default_setting(d):
     for key in sorted(d.keys()):
         value = d[key]
         if value:
@@ -230,7 +231,6 @@ def print_default_setting(d):
 
 
 def monkey_patch_ask_user(d):
-    # for python2... can't use nonlocal
     global hook_d
 
     org_do_prompt = None
@@ -248,7 +248,7 @@ def monkey_patch_ask_user(d):
         quickstart.do_prompt = _do_prompt
     else:
         d.update(hook_d)
-        print_default_setting(d)
+        _print_default_setting(d)
         print()
 
     ask_user(d)
@@ -259,7 +259,6 @@ def monkey_patch_ask_user(d):
 
 
 def monkey_patch_generate(d, templatedir=None):
-    # for python2... don't use nonlocal
     global hook_d
     hook_d = copy.copy(d)
 
@@ -271,16 +270,42 @@ def set_home_dir(_in):
     home_dir = _in
 
 
+def check_installed_modules(d=None):
+    import pip
+
+    d = d or {}
+    installed_dict = {
+        x.project_name: x.version
+        for x in pip.get_installed_distributions()
+    }
+    not_installed = []
+
+    for ext in qsp_extensions:
+        if ext["key"] in d:
+            for package in ext.get("package", []):
+                if package not in installed_dict:
+                    print(installed_dict.keys())
+                    not_installed.append(package)
+
+    return "pip install {0}".format(" ".join(not_installed)) if not_installed else None
+
+
 def set_term_input(_term_input):
     quickstart.term_input = _term_input
 
 
 def dump_setting(d, json_path):
+    """ for unit test
+
+    :type d: dict
+    :type json_path: str
+    """
     json.dump(d, open(json_path, "w"), indent=4)
 
 
-def main(argv=sys.argv):
+def main(argv=None):
     global hook_d
+    argv = sys.argv if argv is None else argv
 
     # load latest setting.
     if not os.path.isdir(home_dir):
@@ -334,6 +359,14 @@ def main(argv=sys.argv):
                 AUTOBUILD_IGNORE=" ".join(AUTOBUILD_IGNORE),
             )
         )
+
+    # check install module
+    print("check modules...")
+    pip_text = check_installed_modules(d)
+
+    if pip_text:
+        print()
+        print("Module not found, please enter '{0}' and install module.".format(pip_text))
 
 if __name__ == '__main__':
     main(sys.argv)
