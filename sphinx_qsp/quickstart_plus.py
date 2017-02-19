@@ -32,7 +32,7 @@ from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
 from sphinx.quickstart import TERM_ENCODING
 
-__version__ = "0.3.4"
+__version__ = "0.4"
 
 
 home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
@@ -50,7 +50,7 @@ import sphinx_fontawesome
 extensions.append('sphinx_fontawesome')
 """,
 
-    "package": ["sphinx_fontawesome"]
+    "package": ["sphinx-fontawesome"]
 }
 
 sphinx_commonmark_extension = {
@@ -77,7 +77,7 @@ def setup(app):
             }, True)
     app.add_transform(AutoStructify)
 """,
-    "package": ["commonmark", "recommonmark"]
+    "package": ["CommonMark", "recommonmark"]
 }
 
 sphinx_sphinx_rtd_theme_extension = {
@@ -89,7 +89,7 @@ sphinx_sphinx_rtd_theme_extension = {
 # ----- Read the Docs Theme
 html_theme = "sphinx_rtd_theme"
 """,
-    "package": ["sphinx_rtd_theme"],
+    "package": ["sphinx-rtd-theme"],
 }
 
 
@@ -119,7 +119,7 @@ livehtml:
 
 nbsphinx_extension = {
     "key": "ext_nbshpinx",
-    "description": "Sphinx extension for embedding blockdiag diagrams",
+    "description": "provides a source parser for *.ipynb files",
 
     "conf_py": """
 
@@ -132,7 +132,7 @@ exclude_patterns.append('**.ipynb_checkpoints')
 
 sphinx_blockdiag_extension = {
     "key": "ext_blockdiag",
-    "description": "provides a source parser for *.ipynb files",
+    "description": "Sphinx extension for embedding blockdiag diagrams",
 
     "conf_py": """
 
@@ -270,6 +270,26 @@ def set_home_dir(_in):
     home_dir = _in
 
 
+def check_installed_modules(d=None):
+    import pip
+
+    d = d or {}
+    installed_dict = {
+        x.project_name: x.version
+        for x in pip.get_installed_distributions()
+    }
+    not_installed = []
+
+    for ext in qsp_extensions:
+        if ext["key"] in d:
+            for package in ext.get("package", []):
+                if package not in installed_dict:
+                    print(installed_dict.keys())
+                    not_installed.append(package)
+
+    return "pip install {0}".format(" ".join(not_installed)) if not_installed else None
+
+
 def set_term_input(_term_input):
     quickstart.term_input = _term_input
 
@@ -339,6 +359,14 @@ def main(argv=None):
                 AUTOBUILD_IGNORE=" ".join(AUTOBUILD_IGNORE),
             )
         )
+
+    # check install module
+    print("check modules...")
+    pip_text = check_installed_modules(d)
+
+    if pip_text:
+        print()
+        print("Module not found, please enter '{0}' and install module.".format(pip_text))
 
 if __name__ == '__main__':
     main(sys.argv)

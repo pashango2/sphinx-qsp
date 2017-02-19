@@ -17,17 +17,9 @@ if sys.version_info < (2, 7) or (3, 0) <= sys.version_info < (3, 4):
     sys.exit(1)
 
 requires = [
-    'six>=1.5',
-    'Jinja2>=2.3',
-    'Pygments>=2.0',
-    'docutils>=0.11',
-    'snowballstemmer>=1.1',
-    'babel>=1.3,!=2.0',
-    'alabaster>=0.7,<0.8',
-    'imagesize',
-    'requests>=2.0.0',
-    'typing',
+    'sphinx',
 ]
+
 extras_require = {
     # Environment Marker works for wheel 0.24 or later
     ':sys_platform=="win32"': [
@@ -63,7 +55,7 @@ setup(
     license='Free',
     author='Toshiyuki Ishii',
     author_email='pashango2@gmail.com',
-    description='Python documentation generator',
+    description='sphinx-quickstart Utility',
     long_description=readme,
     zip_safe=False,
     classifiers=[
