@@ -32,7 +32,7 @@ from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
 from sphinx.quickstart import TERM_ENCODING
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 
 
 home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
@@ -87,9 +87,7 @@ sphinx_sphinx_rtd_theme_extension = {
     "conf_py": """
 
 # ----- Read the Docs Theme
-import sphinx_rtd_theme
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 """,
     "package": ["sphinx_rtd_theme"],
 }
@@ -161,12 +159,12 @@ packetdiag_html_image_format = 'SVG'
 }
 
 qsp_extensions = [
-    sphinx_fontawesome_extension,
     sphinx_commonmark_extension,
-    sphinx_sphinx_rtd_theme_extension,
-    sphinx_autobuild_extension,
     nbsphinx_extension,
     sphinx_blockdiag_extension,
+    sphinx_fontawesome_extension,
+    sphinx_sphinx_rtd_theme_extension,
+    sphinx_autobuild_extension,
 ]
 
 EXCLUDE_VALUE = ['project', 'author', 'path', 'version', 'release', 'extensions']
@@ -205,6 +203,11 @@ def qsp_ask_latest():
 
 
 def qsp_ask_user(d):
+    """ quick start extend questions.
+
+    :param dict d: setting dict
+    :return:
+    """
     for ext in qsp_extensions:
         key = ext["key"]
         description = ext["description"]
