@@ -2,6 +2,10 @@
 
 This is a utility tool that extends 'sphinx-quickstart'.
 
+## Licence
+
+This module is license free :)
+
 ## Installation
 
 ```
