@@ -32,7 +32,7 @@ from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
 from sphinx.quickstart import TERM_ENCODING
 
-__version__ = "0.4"
+__version__ = "0.4.1"
 
 
 home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
@@ -284,7 +284,6 @@ def check_installed_modules(d=None):
         if ext["key"] in d:
             for package in ext.get("package", []):
                 if package not in installed_dict:
-                    print(installed_dict.keys())
                     not_installed.append(package)
 
     return "pip install {0}".format(" ".join(not_installed)) if not_installed else None
@@ -367,6 +366,8 @@ def main(argv=None):
     if pip_text:
         print()
         print("Module not found, please enter '{0}' and install module.".format(pip_text))
+    else:
+        print("ok")
 
 if __name__ == '__main__':
     main(sys.argv)
