@@ -32,7 +32,7 @@ from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
 from sphinx.quickstart import TERM_ENCODING
 
-__version__ = "0.4"
+__version__ = "0.4.1"
 
 
 home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
