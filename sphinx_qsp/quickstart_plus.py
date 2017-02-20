@@ -32,7 +32,7 @@ from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
 from sphinx.quickstart import TERM_ENCODING
 
-__version__ = "0.4.1"
+__version__ = "0.5"
 
 
 home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
@@ -302,8 +302,20 @@ def dump_setting(d, json_path):
     json.dump(d, open(json_path, "w"), indent=4)
 
 
+def extend_conf_py(d, ext, text):
+    """ for monkey patch """
+    return text
+
+
+def extend_makefile(d, ext, text):
+    """ for monkey patch """
+    return text
+
+
 def main(argv=None):
     global hook_d
+
+    hook_d = {}
     argv = sys.argv if argv is None else argv
 
     # load latest setting.
@@ -336,7 +348,7 @@ def main(argv=None):
     with open(conf_path, "a+") as fc:
         for ext in qsp_extensions:
             if d.get(ext["key"]) and "conf_py" in ext:
-                fc.write(ext["conf_py"])
+                fc.write(extend_conf_py(d, ext, ext["conf_py"]))
 
     if d['makefile'] is True:
         make_path = os.path.join(d['path'], 'Makefile')
@@ -345,7 +357,7 @@ def main(argv=None):
 
             for ext in qsp_extensions:
                 if d.get(ext["key"]) and makefile_key in ext:
-                    fm.write(ext[makefile_key])
+                    fm.write(extend_makefile(d, ext, ext[makefile_key]))
 
     if d['batchfile'] is True and d.get("ext_autobuild"):
         batchfile_path = os.path.join(d['path'], 'auto_build.bat')
