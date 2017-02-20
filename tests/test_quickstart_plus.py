@@ -83,7 +83,7 @@ def mock_input(answers, needanswer=False):
             prompt = text_type(prompt)  # Python3.x input emulation
             # `input` decode prompt by default encoding before print.
         for question in answers:
-            if prompt.startswith(qs.PROMPT_PREFIX + question):
+            if question in prompt:
                 return answers[question]
         if needanswer:
             raise AssertionError('answer for %r missing' % prompt)
