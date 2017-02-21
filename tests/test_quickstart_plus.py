@@ -4,22 +4,22 @@
 """
 import sys
 import os
-from six import PY2, text_type, StringIO
-from six.moves import input
+from six import PY2, text_type
+# from six.moves import input
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 from sphinx_qsp import quickstart_plus as qsp
-from sphinx import quickstart as qs
+# from sphinx import quickstart as qs
 
 
 def test_check_installed_modules():
-    all_key_dict = [x["key"] for x in qsp.qsp_extensions]
+    all_key_dict = [x.key for x in qsp.qsp_extensions]
     not_install = qsp.check_installed_modules(all_key_dict)
     assert not_install is None
 
 
 def test_quickstart(tmpdir):
-
     answers = {
         'Root path': str(tmpdir.realpath()),
         'Separate source and build': 'y',
@@ -43,7 +43,8 @@ def test_quickstart(tmpdir):
         'githubpages': 'no',
         'ext_rtd_theme': 'y',
         'ext_fontawesome': 'y',
-        'Create Makefile': 'no',
+        'ext_autobuild': 'y',
+        'Create Makefile': 'yes',
         'Create Windows command file': 'no',
         'Do you want to use the epub builder': 'yes',
     }
@@ -70,30 +71,29 @@ def test_quickstart(tmpdir):
 
     print(conffile.read())
 
-    # tmpdir.cleanup()
+    makefile = tmpdir / 'Makefile'
+    assert makefile.check()
+    print(makefile.read())
 
 
 def test_monkey_patch(tmpdir):
-    qsp.qsp_extensions.append({
-        "key": "ext_test",
-        "description": "tes message",
-        "conf_py": """
+    # noinspection PyClassHasNoInit
+    class TestExtension(qsp.Extension):
+        def extend_conf_py(self, d):
+            return self.conf_py.format(**d)
+
+    test_extend = TestExtension(
+        "ext_test", "test message",
+        conf_py="""
 
 # ----- test
-path = {0}
+path = '{path}'
 """,
-    })
-
-    def _extend_conf_py(d, ext, text):
-        if ext["key"] == "test":
-            return text.format(d["path"])
-        else:
-            return text
-
-    qsp.extend_conf_py = _extend_conf_py
+    )
+    qsp.qsp_extensions.append(test_extend)
 
     answers = {
-        'Root path': str(tmpdir.realpath()) + "/mon",
+        'Root path': str(tmpdir.realpath()),
         'Separate source and build': 'y',
         'Name prefix for templates': '.',
         'Project name': u'STASI™'.encode('utf-8'),
@@ -135,7 +135,8 @@ path = {0}
     qsp.dump_setting = dump_setting
     qsp.main([])
 
-    # tmpdir.cleanup()
+    conffile = tmpdir / 'source/conf.py'
+    print(conffile.read())
 
 
 def mock_input(answers, needanswer=False):
