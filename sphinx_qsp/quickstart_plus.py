@@ -9,17 +9,18 @@
 
     extend sphix-quickstart.
 
-    - Remember latest sphinx-quickstart settings.
-    - More extensions
-      - commonmark and recommonmark
-      - Read the Docs theme
-      - sphinx_fontawesome
-      - sphinxcontrib-blockdiag
-      - nbsphinx
-      - sphinx-autobuild
+    * Remember latest sphinx-quickstart settings.
+    * More extensions
 
-    :author: pashango2.
-    :license: Free.
+      * commonmark and recommonmark
+      * Read the Docs theme
+      * sphinx_fontawesome
+      * sphinxcontrib-blockdiag
+      * nbsphinx
+      * sphinx-autobuild
+
+    :author: pashango2
+    :license: Free
 """
 from __future__ import absolute_import
 from __future__ import print_function
