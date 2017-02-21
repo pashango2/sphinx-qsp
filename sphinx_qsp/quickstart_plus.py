@@ -30,34 +30,87 @@ import os
 
 from sphinx import quickstart
 from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
-from sphinx.quickstart import TERM_ENCODING
 
-__version__ = "0.5"
+__version__ = "0.6"
 
 
-home_dir = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
+HOME_DIR = os.path.join(os.path.expanduser('~'), ".sphinx_qsp")
 LATEST_SETTING_JSON_NAME = "setting.json"
 
+EXCLUDE_VALUE = ['project', 'author', 'path', 'version', 'release', 'extensions']
 
-sphinx_fontawesome_extension = {
-    "key": "ext_fontawesome",
-    "description": "use font awesome",
+AUTOBUILD_IGNORE = [
+    '-r "___jb_.*?___$$"',   # for pycharm
+    '-r "^~.*"',
+    '-r ".*?\.(bak|BAK)$$"',
+]
 
-    "conf_py": """
+AUTO_BUILD_BATCH = """
+@ECHO OFF
 
+pushd %~dp0
+
+REM Command file for Sphinx auto build
+
+set SOURCEDIR={source_dir}
+set BUILDDIR={build_dir}
+
+sphinx-autobuild -b html {AUTOBUILD_IGNORE} %SOURCEDIR% %BUILDDIR%/html
+goto end
+
+:end
+popd
+""".strip()
+
+
+class Extension(object):
+    def __init__(self, key, description, conf_py=None, new_makefile=None, makefile=None, package=None):
+        self.key = key
+        self.description = description
+        self.conf_py = conf_py
+        self.new_makefile = new_makefile
+        self.makefile = makefile
+        self.package = package or []
+
+    # noinspection PyUnusedLocal
+    def extend_conf_py(self, d):
+        return self.conf_py
+
+    def extend_makefile(self, d, make_mode):
+        return self.new_makefile if make_mode else self.makefile
+
+
+class AutoBuildExtension(Extension):
+    def extend_makefile(self, d, make_mode):
+        if d['batchfile']:
+            batchfile_path = os.path.join(d['path'], 'auto_build.bat')
+            source_dir = d['sep'] and 'source' or '.'
+            build_dir = d['sep'] and 'build' or d['dot'] + 'build'
+
+            open(batchfile_path, "w").write(
+                AUTO_BUILD_BATCH.format(
+                    build_dir=build_dir, source_dir=source_dir,
+                    AUTOBUILD_IGNORE=" ".join(AUTOBUILD_IGNORE),
+                )
+            )
+
+        makefile = self.new_makefile if make_mode else self.makefile
+        return makefile.format(" ".join(AUTOBUILD_IGNORE))
+
+
+sphinx_fontawesome_extension = Extension(
+    "ext_fontawesome", "use font awesome",
+    conf_py="""
 # ----- sphinx-fontawesome
 import sphinx_fontawesome
 extensions.append('sphinx_fontawesome')
 """,
+    package=["sphinx-fontawesome"],
+)
 
-    "package": ["sphinx-fontawesome"]
-}
-
-sphinx_commonmark_extension = {
-    "key": "ext_commonmark",
-    "description": "use CommonMark and AutoStructify",
-
-    "conf_py": """
+sphinx_commonmark_extension = Extension(
+    "ext_commonmark", "use CommonMark and AutoStructify",
+    conf_py="""
 
 # ----- CommonMark
 source_suffix = [source_suffix, '.md']
@@ -77,64 +130,33 @@ def setup(app):
             }, True)
     app.add_transform(AutoStructify)
 """,
-    "package": ["CommonMark", "recommonmark"]
-}
+    package=["CommonMark", "recommonmark"],
+)
 
-sphinx_sphinx_rtd_theme_extension = {
-    "key": "ext_rtd_theme",
-    "description": "use Read the Doc theme",
-
-    "conf_py": """
+sphinx_sphinx_rtd_theme_extension = Extension(
+    "ext_rtd_theme", "use Read the Doc theme",
+    conf_py="""
 
 # ----- Read the Docs Theme
 html_theme = "sphinx_rtd_theme"
 """,
-    "package": ["sphinx-rtd-theme"],
-}
+    package=["sphinx-rtd-theme"],
+)
 
-
-AUTOBUILD_IGNORE = [
-    '-r "___jb_.*?___$$"',   # for pycharm
-    '-r ".*?\.(bak|BAK)$$"',
-]
-
-sphinx_autobuild_extension = {
-    "key": "ext_autobuild",
-    "description": "autobuild: Watch a directory and rebuild the documentation",
-
-    "makefile": """
-
-livehtml:
-\tsphinx-autobuild -b html {0} $(ALLSPHINXOPTS) $(BUILDDIR)/html
-""".format(" ".join(AUTOBUILD_IGNORE)),
-
-    "new_makefile": """
-
-livehtml:
-\tsphinx-autobuild -b html {0} $(SOURCEDIR) $(BUILDDIR)/html
-""".format(" ".join(AUTOBUILD_IGNORE)),
-
-    "package": ["sphinx-autobuild"],
-}
-
-nbsphinx_extension = {
-    "key": "ext_nbshpinx",
-    "description": "provides a source parser for *.ipynb files",
-
-    "conf_py": """
+nbsphinx_extension = Extension(
+    "ext_nbshpinx", "provides a source parser for *.ipynb files",
+    conf_py="""
 
 # ----- Jupyter Notebook nbsphinx
 extensions.append('nbsphinx')
 exclude_patterns.append('**.ipynb_checkpoints')
 """,
-    "package": ["nbsphinx"],
-}
+    package=["nbsphinx"],
+)
 
-sphinx_blockdiag_extension = {
-    "key": "ext_blockdiag",
-    "description": "Sphinx extension for embedding blockdiag diagrams",
-
-    "conf_py": """
+sphinx_blockdiag_extension = Extension(
+    "ext_blockdiag", "Sphinx extension for embedding blockdiag diagrams",
+    conf_py="""
 
 # ----- blockdiag settings
 extensions.extend([
@@ -152,11 +174,26 @@ nwdiag_html_image_format = 'SVG'
 rackiag_html_image_format = 'SVG'
 packetdiag_html_image_format = 'SVG'
 """,
-    "package": [
+    package=[
         "sphinxcontrib-actdiag", "sphinxcontrib-blockdiag",
         "sphinxcontrib-nwdiag", "sphinxcontrib-seqdiag"
-    ],
-}
+    ]
+)
+
+sphinx_autobuild_extension = AutoBuildExtension(
+    "ext_autobuild", "Watch a directory and rebuild the documentation",
+    makefile="""
+
+livehtml:
+\tsphinx-autobuild -b html {0} $(ALLSPHINXOPTS) $(BUILDDIR)/html
+""",
+    new_makefile="""
+
+livehtml:
+\tsphinx-autobuild -b html {0} $(SOURCEDIR) $(BUILDDIR)/html
+""",
+    package=["sphinx-autobuild"],
+)
 
 qsp_extensions = [
     sphinx_commonmark_extension,
@@ -166,25 +203,6 @@ qsp_extensions = [
     sphinx_sphinx_rtd_theme_extension,
     sphinx_autobuild_extension,
 ]
-
-EXCLUDE_VALUE = ['project', 'author', 'path', 'version', 'release', 'extensions']
-
-AUTO_BUILD_BATCH = """
-@ECHO OFF
-
-pushd %~dp0
-
-REM Command file for Sphinx auto build
-
-set SOURCEDIR={source_dir}
-set BUILDDIR={build_dir}
-
-sphinx-autobuild -b html {AUTOBUILD_IGNORE} %SOURCEDIR% %BUILDDIR%/html
-goto end
-
-:end
-popd
-""".strip()
 
 # for python2... can't use nonlocal
 hook_d = {}
@@ -209,11 +227,8 @@ def qsp_ask_user(d):
     :return:
     """
     for ext in qsp_extensions:
-        key = ext["key"]
-        description = ext["description"]
-
-        if key not in d:
-            qsp_do_prompt(d, key, key + ":" + description + ' (y/n)', 'n', boolean)
+        if ext.key not in d:
+            qsp_do_prompt(d, ext.key, ext.key + ":" + ext.description + ' (y/n)', 'n', boolean)
 
 
 def qsp_do_prompt(d, key, text, default=None, validator=nonempty):
@@ -266,8 +281,8 @@ def monkey_patch_generate(d, templatedir=None):
 
 
 def set_home_dir(_in):
-    global home_dir
-    home_dir = _in
+    global HOME_DIR
+    HOME_DIR = _in
 
 
 def check_installed_modules(d=None):
@@ -281,8 +296,8 @@ def check_installed_modules(d=None):
     not_installed = []
 
     for ext in qsp_extensions:
-        if ext["key"] in d:
-            for package in ext.get("package", []):
+        if ext.key in d:
+            for package in ext.package:
                 if package not in installed_dict:
                     not_installed.append(package)
 
@@ -302,16 +317,6 @@ def dump_setting(d, json_path):
     json.dump(d, open(json_path, "w"), indent=4)
 
 
-def extend_conf_py(d, ext, text):
-    """ for monkey patch """
-    return text
-
-
-def extend_makefile(d, ext, text):
-    """ for monkey patch """
-    return text
-
-
 def main(argv=None):
     global hook_d
 
@@ -319,10 +324,10 @@ def main(argv=None):
     argv = sys.argv if argv is None else argv
 
     # load latest setting.
-    if not os.path.isdir(home_dir):
-        os.mkdir(home_dir)
+    if not os.path.isdir(HOME_DIR):
+        os.mkdir(HOME_DIR)
 
-    json_path = os.path.join(home_dir, LATEST_SETTING_JSON_NAME)
+    json_path = os.path.join(HOME_DIR, LATEST_SETTING_JSON_NAME)
     if os.path.isfile(json_path):
         hook_d.update(json.load(open(json_path)))
 
@@ -336,7 +341,7 @@ def main(argv=None):
     # do sphinx.quickstart
     quickstart.main(argv)
 
-    # save latest stiing.
+    # save latest setting.
     save_d = {key: value for key, value in hook_d.items() if key not in EXCLUDE_VALUE}
     dump_setting(save_d, json_path)
 
@@ -345,31 +350,20 @@ def main(argv=None):
 
     srcdir = d['sep'] and os.path.join(d['path'], 'source') or d['path']
     conf_path = os.path.join(srcdir, "conf.py")
+
     with open(conf_path, "a+") as fc:
         for ext in qsp_extensions:
-            if d.get(ext["key"]) and "conf_py" in ext:
-                fc.write(extend_conf_py(d, ext, ext["conf_py"]))
+            if d.get(ext.key) and ext.conf_py:
+                fc.write(ext.extend_conf_py(d))
 
     if d['makefile'] is True:
         make_path = os.path.join(d['path'], 'Makefile')
+        make_mode = d.get("make_mode", True)
         with open(make_path, "a+") as fm:
-            makefile_key = "new_makefile" if d.get("make_mode", True) else "makefile"
-
+            makefile_key = "new_makefile" if make_mode else "makefile"
             for ext in qsp_extensions:
-                if d.get(ext["key"]) and makefile_key in ext:
-                    fm.write(extend_makefile(d, ext, ext[makefile_key]))
-
-    if d['batchfile'] is True and d.get("ext_autobuild"):
-        batchfile_path = os.path.join(d['path'], 'auto_build.bat')
-        source_dir = d['sep'] and 'source' or '.'
-        build_dir = d['sep'] and 'build' or d['dot'] + 'build'
-
-        open(batchfile_path, "w").write(
-            AUTO_BUILD_BATCH.format(
-                build_dir=build_dir, source_dir=source_dir,
-                AUTOBUILD_IGNORE=" ".join(AUTOBUILD_IGNORE),
-            )
-        )
+                if d.get(ext.key) and getattr(ext, makefile_key):
+                    fm.write(ext.extend_makefile(d, make_mode))
 
     # check install module
     print("check modules...")
