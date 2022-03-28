@@ -28,8 +28,8 @@ import copy
 import json
 import os
 
-from sphinx import quickstart
-from sphinx.quickstart import ask_user, generate, do_prompt, nonempty, boolean
+from sphinx.cmd import quickstart
+from sphinx.cmd.quickstart import ask_user, generate, do_prompt, nonempty, boolean
 
 __version__ = "0.6"
 
